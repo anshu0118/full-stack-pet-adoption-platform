@@ -1,0 +1,1 @@
+package com.jackandpaws;import org.junit.jupiter.api.Test;import static org.junit.jupiter.api.Assertions.*;class JackAndPawsApplicationTests{@Test void smoke(){assertEquals("jack-and-paws-api","jack-and-paws-api");}}

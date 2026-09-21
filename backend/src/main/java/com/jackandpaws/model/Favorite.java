@@ -1,0 +1,3 @@
+package com.jackandpaws.model;
+import jakarta.persistence.*;import java.time.Instant;
+@Entity @Table(name="favorites",uniqueConstraints=@UniqueConstraint(name="uk_favorite_user_pet",columnNames={"user_id","pet_id"}),indexes=@Index(name="idx_favorite_user",columnList="user_id")) public class Favorite { @Id @GeneratedValue(strategy=GenerationType.IDENTITY) Long id; @ManyToOne(fetch=FetchType.LAZY,optional=false) User user; @ManyToOne(fetch=FetchType.LAZY,optional=false) Pet pet; @Column(nullable=false) Instant createdAt=Instant.now(); public Long getId(){return id;} public User getUser(){return user;} public void setUser(User v){user=v;} public Pet getPet(){return pet;} public void setPet(Pet v){pet=v;} }

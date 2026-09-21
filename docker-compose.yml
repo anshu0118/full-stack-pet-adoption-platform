@@ -1,0 +1,26 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: jack_and_paws
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
+    volumes: [jack_paws_db:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD","mysqladmin","ping","-h","localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    build: ./backend
+    depends_on:
+      mysql: {condition: service_healthy}
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/jack_and_paws?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      JWT_SECRET: change-this-to-a-real-secret-before-production
+      CORS_ORIGIN: http://localhost:5173
+    ports: ["8080:8080"]
+volumes:
+  jack_paws_db:
