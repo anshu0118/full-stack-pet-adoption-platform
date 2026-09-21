@@ -1,265 +1,401 @@
-Jack & Paws 🐾
+# Jack & Paws 🐾
 
-A full-stack pet adoption platform built to connect adopters with
-shelters through a complete adoption workflow.
+> A full-stack pet adoption platform built around a real adoption workflow, connecting adopters with shelters through discovery, applications, review, and adoption.
 
-Jack & Paws goes beyond a simple pet listing website. It includes
-authentication, role-based access, pet management, favourites, adoption
-applications, shelter-side application review, application status
-tracking, and a structured backend built around a service/repository
-architecture.
+Jack & Paws is not just a pet listing site. It is a full-stack application with JWT authentication, role-based access, pet management, favourites, adoption applications, shelter dashboards, application review, state-driven adoption logic, MySQL persistence, Docker support, and CI.
 
-What Jack & Paws Does
+---
 
-Adopters
+## 🐾 What is Jack & Paws?
 
-Users can:
+Jack & Paws gives adopters and shelters different experiences inside the same platform.
 
-Create an account and authenticate securely
+### For adopters
 
-Browse available pets
+- Create an account and sign in securely
+- Browse available pets
+- Search by pet name or breed
+- Filter by species, size, and gender
+- View individual pet details
+- Save pets to favourites
+- Submit adoption applications
+- Track applications from the dashboard
+- See application status changes made by the shelter
 
-Search and filter pets
+### For shelters
 
-View detailed pet profiles
+- Sign in using a shelter account
+- Add pets to the adoption directory
+- Manage their own pet listings
+- Remove pets from active listings
+- Receive applications for their pets
+- Review applicant information
+- Approve or reject applications
+- Track pending and adopted pets
 
-Save pets to favourites
+The backend also enforces shelter ownership, so a shelter cannot modify another shelter's data simply by knowing a resource ID.
 
-Submit adoption applications
+---
 
-Track submitted applications
+## 🔄 Adoption Workflow
 
-View application status updates
+The important part of the application is the workflow connecting the adopter and the shelter.
 
-Shelters
+```text
+                     AVAILABLE
+                         │
+                         │  User applies
+                         ▼
+                APPLICATION_PENDING
+                         │
+                         │  Shelter reviews
+                         ▼
+                  ┌──────┴──────┐
+                  │             │
+                  ▼             ▼
+              APPROVED       REJECTED
+                  │             │
+                  ▼             ▼
+               ADOPTED      AVAILABLE
+```
 
-Shelter accounts can:
+Applications have their own lifecycle:
 
-Add pets to the adoption directory
+```text
+SUBMITTED
+    │
+    ▼
+UNDER_REVIEW
+    │
+    ▼
+MEET_AND_GREET
+    │
+    ├──────► APPROVED
+    │
+    └──────► REJECTED
+```
 
-View pets managed by their shelter
+Pets can also be marked:
 
-Remove available pets from active listings
+```text
+REMOVED
+```
 
-View incoming adoption applications
+Removed pets stay in the database for history but are excluded from active public adoption listings.
 
-Review applicant information
+---
 
-Approve or reject applications
+## ✨ Features
 
-Track adopted pets and application activity
+### Authentication & Security
 
-Adoption Workflow
+- JWT authentication
+- BCrypt password hashing
+- Stateless Spring Security
+- Protected frontend routes
+- Role-based authorization
+- `USER`, `SHELTER`, and `ADMIN` roles
+- Method-level authorization
+- Shelter ownership validation
+- Environment-based database and JWT secrets
 
-AVAILABLE
-    |
-    | User submits application
-    v
-APPLICATION_PENDING
-    |
-    | Shelter reviews
-    v
-APPROVED / REJECTED
-    |         |
-    v         v
-ADOPTED    AVAILABLE
+### Pet Discovery
 
-Applications move through SUBMITTED, UNDER_REVIEW, MEET_AND_GREET,
-then APPROVED or REJECTED.
+- Public pet catalogue
+- Search by name or breed
+- Species filtering
+- Size filtering
+- Gender filtering
+- Pagination
+- Pet detail pages
+- Availability-aware listings
 
-A removed pet is represented by REMOVED and excluded from active
-adoption listings.
+### Favourites
 
-Core Features
+Authenticated adopters can:
 
-Authentication & Authorization
+- Save pets
+- Remove saved pets
+- View saved pets from their dashboard
 
-User registration and login
+### Adoption Applications
 
-JWT-based authentication
+Applications collect:
 
-BCrypt password hashing
+- Housing type
+- Yard availability
+- Existing pets
+- Previous pet experience
+- Applicant message
 
-Stateless Spring Security
+The backend prevents duplicate active applications for the same pet.
 
-Role-based authorization
+### Shelter Dashboard
 
-USER, SHELTER and ADMIN roles
+The shelter dashboard provides:
 
-Protected frontend routes
+- Managed pet count
+- Application count
+- Pending application count
+- Adopted pet count
+- Shelter pet listings
+- Application inbox
+- Applicant details
+- Approve/reject actions
 
-Shelter ownership validation
+### Pet Management
 
-Pet Discovery
+Shelters can:
 
-Public pet catalogue
+- Create pets
+- Update pet information
+- Remove pets from active listings
+- View adoption state
 
-Search by name or breed
+Removal is implemented as a soft state transition instead of a hard database delete.
 
-Species, size and gender filters
+Adopted pets cannot be removed.
 
-Pagination
+---
 
-Pet detail pages
+## 🏗️ Architecture
 
-Adoption availability states
+```text
+┌───────────────────────────────┐
+│        React Frontend         │
+│     Vite + Tailwind CSS       │
+└───────────────┬───────────────┘
+                │
+                │ REST / JSON
+                ▼
+┌───────────────────────────────┐
+│         Spring Boot API       │
+│                               │
+│         Controllers           │
+│              │                │
+│              ▼                │
+│           Services            │
+│              │                │
+│              ▼                │
+│         Repositories          │
+└───────────────┬───────────────┘
+                │
+                │ JPA / Hibernate
+                ▼
+┌───────────────────────────────┐
+│             MySQL             │
+└───────────────────────────────┘
+```
 
-Favourites
+The backend follows a layered architecture:
 
-Authenticated adopters can save, remove and view favourite pets.
-
-Adoption Applications
-
-Applications contain housing information, yard availability, existing
-pets, previous experience and a personal message. Duplicate active
-applications for the same pet are prevented.
-
-Shelter Dashboard
-
-Shelters can see managed pets, application counts, pending applications,
-adopted pets and incoming applications. They can review applicant
-details and update application status.
-
-Pet Management
-
-Shelters can create and update pets and remove them from active
-listings. Removed pets are soft-removed rather than physically deleted,
-preserving history. Adopted pets cannot be removed.
-
-Architecture
-
-React + Vite + Tailwind
-          |
-       REST/JSON
-          v
-     Spring Boot
-          |
-      JPA/Hibernate
-          |
-          v
-        MySQL
-
-The backend follows:
-
+```text
 Controller
-    |
-    v
+    ↓
 Service
-    |
-    v
+    ↓
 Repository
-    |
-    v
+    ↓
 Database
+```
 
-Technology Stack
+This keeps HTTP handling, business rules, and persistence separated.
 
-Frontend
+---
 
-React, Vite, Tailwind CSS, React Router, JavaScript, Fetch API, React
-Context, React Bits-inspired components and OGL/WebGL visual effects.
+## 🛠️ Technology Stack
 
-Backend
+### Frontend
 
-Java 17, Spring Boot, Spring Web, Spring Security, Spring Data JPA,
-Hibernate, JWT, BCrypt and Jakarta Validation.
+- React
+- Vite
+- Tailwind CSS
+- React Router
+- JavaScript
+- Fetch API
+- React Context
+- OGL/WebGL
+- React Bits-inspired components
 
-Database
+### Backend
 
-MySQL with JPA/Hibernate ORM and indexed frequently queried fields.
+- Java 17
+- Spring Boot
+- Spring Web
+- Spring Security
+- Spring Data JPA
+- Hibernate
+- JWT
+- BCrypt
+- Jakarta Validation
 
-DevOps
+### Database
 
-Docker, Docker Compose, GitHub Actions and Git.
+- MySQL
+- JPA / Hibernate ORM
+- Indexed fields for common pet queries
 
-Security
+### DevOps
 
-Authentication uses JWT tokens with BCrypt password hashing.
+- Docker
+- Docker Compose
+- GitHub Actions
+- Git
+
+---
+
+## 🔐 Security Model
+
+Authentication returns a JWT.
 
 Protected requests use:
 
+```http
 Authorization: Bearer <token>
+```
 
-Authorization is enforced through Spring Security and service-layer
-ownership checks. A shelter can only manage its own pets and
-applications.
+Authorization is enforced at multiple layers.
 
-API Overview
+| Role | Main capabilities |
+|---|---|
+| `USER` | Browse, favourite, apply, track applications |
+| `SHELTER` | Manage own pets and review own applications |
+| `ADMIN` | Administrative operations |
 
-POST   /api/auth/register
-POST   /api/auth/login
+Shelter ownership is checked in the service layer as well as through Spring Security authorization.
 
+Database credentials and JWT secrets are supplied through environment variables and are not stored in the repository.
+
+---
+
+## 🔌 API Overview
+
+### Authentication
+
+```text
+POST /api/auth/register
+POST /api/auth/login
+```
+
+### Pets
+
+```text
 GET    /api/pets
 GET    /api/pets/{id}
 POST   /api/pets
 PUT    /api/pets/{id}
 DELETE /api/pets/{id}
+```
 
+### Favourites
+
+```text
 GET    /api/favorites
 POST   /api/favorites/{petId}
 DELETE /api/favorites/{petId}
+```
 
-POST   /api/applications
-GET    /api/applications
-GET    /api/applications/{id}
+### Applications
 
-GET    /api/shelter/pets
-GET    /api/shelter/applications
-PATCH  /api/shelter/applications/{id}/status
+```text
+POST /api/applications
+GET  /api/applications
+GET  /api/applications/{id}
+```
 
-GET    /api/users/me
+### Shelter
 
-GET    /api/health
-GET    /actuator/health
+```text
+GET   /api/shelter/pets
+GET   /api/shelter/applications
+PATCH /api/shelter/applications/{id}/status
+```
 
-Detailed API documentation is available in docs/API.md.
+### User
 
-Domain Model
+```text
+GET /api/users/me
+```
 
+### Health
+
+```text
+GET /api/health
+GET /actuator/health
+```
+
+Detailed endpoint information is available in [`docs/API.md`](docs/API.md).
+
+---
+
+## 🗃️ Domain Model
+
+```text
 User
- |
- +-- Favourite --> Pet
- |
- +-- AdoptionApplication --> Pet --> Shelter(User)
+ │
+ ├── Favourite ──────────► Pet
+ │
+ └── AdoptionApplication ─► Pet
+                              │
+                              └── Shelter (User)
+```
 
-User roles:
+### User roles
 
+```text
 USER
 SHELTER
 ADMIN
+```
 
-Pet states:
+### Pet states
 
+```text
 AVAILABLE
 APPLICATION_PENDING
 ADOPTED
 REMOVED
+```
 
-Application states:
+### Application states
 
+```text
 SUBMITTED
 UNDER_REVIEW
 MEET_AND_GREET
 APPROVED
 REJECTED
+```
 
-Project Structure
+---
 
+## 📁 Project Structure
+
+```text
 jack-and-paws/
-├── .github/workflows/ci.yml
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
 ├── backend/
-│   ├── src/main/java/com/jackandpaws/
-│   │   ├── config/
-│   │   ├── controller/
-│   │   ├── dto/
-│   │   ├── exception/
-│   │   ├── model/
-│   │   ├── repository/
-│   │   ├── security/
-│   │   └── service/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/jackandpaws/
+│   │   │   │   ├── config/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── exception/
+│   │   │   │   ├── model/
+│   │   │   │   ├── repository/
+│   │   │   │   ├── security/
+│   │   │   │   └── service/
+│   │   │   └── resources/
+│   │   └── test/
 │   ├── Dockerfile
 │   ├── pom.xml
 │   └── .env.example
+│
 ├── frontend/
 │   ├── src/
 │   │   ├── assets/
@@ -269,78 +405,106 @@ jack-and-paws/
 │   │   └── services/
 │   ├── package.json
 │   └── .env.example
-├── docs/API.md
+│
+├── docs/
+│   └── API.md
+│
 ├── docker-compose.yml
 ├── README.md
 └── .gitignore
+```
 
-Running Locally
+---
 
-Prerequisites
+## 🚀 Run Locally
 
-Java 17+
+### Requirements
 
-Node.js
+- Java 17+
+- Node.js
+- npm
+- MySQL 8+
+- Git
+- Docker (optional)
 
-npm
+### 1. Create the database
 
-MySQL 8+
-
-Git
-
-Docker (optional)
-
-Backend
-
-Create the database:
-
+```sql
 CREATE DATABASE jack_and_paws;
+```
 
-Set:
+### 2. Configure the backend
 
+Set the required environment variables.
+
+PowerShell:
+
+```powershell
 $env:DB_URL="jdbc:mysql://localhost:3306/jack_and_paws?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
 $env:DB_USERNAME="root"
 $env:DB_PASSWORD="your-password"
 $env:JWT_SECRET="your-long-random-secret"
 $env:CORS_ORIGIN="http://localhost:5173"
+```
 
-Then:
+Run the API:
 
+```powershell
 cd backend
 ./mvnw spring-boot:run
-
-API:
-
-http://localhost:8080
-
-Frontend
-
-cd frontend
-npm install
-
-Create frontend/.env:
-
-VITE_API_URL=http://localhost:8080/api
-
-Run:
-
-npm run dev
-
-Frontend:
-
-http://localhost:5173
-
-Docker
-
-The repository includes docker-compose.yml and backend/Dockerfile
-for a portable containerized setup.
-
-Environment Variables
-
-Real credentials stay outside source control.
+```
 
 Backend:
 
+```text
+http://localhost:8080
+```
+
+### 3. Run the frontend
+
+```powershell
+cd frontend
+npm install
+```
+
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:8080/api
+```
+
+Then:
+
+```powershell
+npm run dev
+```
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## 🐳 Docker
+
+The repository includes:
+
+```text
+docker-compose.yml
+backend/Dockerfile
+```
+
+Docker provides a portable way to run the application across development and deployment environments.
+
+---
+
+## 🌎 Environment Variables
+
+### Backend
+
+```env
 DB_URL=
 DB_USERNAME=
 DB_PASSWORD=
@@ -350,112 +514,145 @@ CORS_ORIGIN=
 DB_POOL_SIZE=
 DDL_AUTO=
 PORT=
+```
 
-Frontend:
+### Frontend
 
+```env
 VITE_API_URL=
+```
 
-Example files are provided at backend/.env.example and
-frontend/.env.example.
+Example files are included:
+
+```text
+backend/.env.example
+frontend/.env.example
+```
 
 Never commit real credentials or production secrets.
 
-CI
+---
 
-GitHub Actions configuration is available at .github/workflows/ci.yml
-to catch build and test issues before deployment.
+## ⚙️ CI
 
-Frontend & Design Approach
+GitHub Actions configuration is located at:
 
-The frontend intentionally avoids a generic template-like visual style.
-It combines a practical application structure with expressive visual
-sections including Aurora/WebGL effects, DriftWall, Grainient, Flowing
-interaction sections, Accordion-style pet galleries and compact pet
-cards.
+```text
+.github/workflows/ci.yml
+```
 
-Visual effects are separated from application logic so the UI can evolve
-independently of the backend architecture.
+The workflow is used to catch build and test problems before deployment.
 
-Engineering Decisions
+---
 
-Soft removal instead of hard deletion
+## 🎨 Frontend Design
 
-Pets are marked REMOVED instead of physically deleted. This preserves
-historical records and application relationships.
+The frontend deliberately avoids a generic dashboard/template appearance.
 
-Shelter ownership
+The visual system combines practical application UI with expressive sections and effects, including:
 
-Pets reference their owning shelter through shelter_id, with backend
-ownership checks preventing cross-shelter management.
+- Aurora/WebGL hero
+- DriftWall
+- Grainient
+- Flowing interaction sections
+- Accordion-style pet galleries
+- Compact pet cards
+- Structured application interfaces
 
-Application-driven pet state
+Visual effects are kept separate from application logic so the visual layer can evolve without changing the backend architecture.
 
-Submitting an application changes a pet from AVAILABLE to
-APPLICATION_PENDING.
+---
 
-Approval changes it to ADOPTED.
+## 🧠 Engineering Decisions
 
-Rejection returns it to AVAILABLE.
+### Soft removal instead of hard deletion
 
-Database-level filtering
+Pets are marked `REMOVED` rather than physically deleted.
 
-Removed pets are excluded from active shelter listings and public
-adoption results rather than relying only on frontend filtering.
+This preserves historical records and application relationships.
 
-Current Status
+### Shelter ownership
 
-Authentication                [x]
-JWT security                 [x]
-Role-based access            [x]
-Pet catalogue                [x]
-Pet search/filtering         [x]
-Pagination                   [x]
-Pet details                  [x]
-Favourites                   [x]
-Adoption applications        [x]
-Application status workflow  [x]
-Shelter dashboard            [x]
-Shelter pet management       [x]
-Shelter application inbox   [x]
-Approve / reject workflow    [x]
-Pet adoption lifecycle      [x]
-Soft removal                [x]
-Docker configuration        [x]
-GitHub Actions CI           [x]
+Pets reference their owning shelter through `shelter_id`.
 
-The next stage is production deployment and infrastructure
-configuration.
+The backend verifies ownership before allowing shelter management operations.
 
-Roadmap
+### Application-driven pet state
 
-Pet image upload/storage with object storage
+Submitting an application:
 
-Shelter profile pages
+```text
+AVAILABLE → APPLICATION_PENDING
+```
 
-Email notifications
+Approval:
 
-Application withdrawal
+```text
+APPLICATION_PENDING → ADOPTED
+```
 
-Admin moderation dashboard
+Rejection:
 
-Advanced shelter analytics
+```text
+APPLICATION_PENDING → AVAILABLE
+```
 
-More detailed application review workflow
+### Public catalogue filtering
 
-Automated deployment pipeline
+The public catalogue only returns pets that are currently `AVAILABLE`.
 
-Production monitoring and logging
+Removed and adopted pets are not presented as active adoption listings.
 
-Automated integration tests
+---
 
-Cloud deployment
+## ✅ Current Status
 
-Author
+The core platform is functional end-to-end.
 
-Built as a full-stack engineering project using React, Spring Boot, JPA,
-MySQL, JWT authentication, Docker and GitHub Actions.
+| Feature | Status |
+|---|:---:|
+| Authentication | ✅ |
+| JWT security | ✅ |
+| Role-based access | ✅ |
+| Pet catalogue | ✅ |
+| Search & filtering | ✅ |
+| Pagination | ✅ |
+| Pet details | ✅ |
+| Favourites | ✅ |
+| Adoption applications | ✅ |
+| Application workflow | ✅ |
+| Shelter dashboard | ✅ |
+| Shelter pet management | ✅ |
+| Shelter application inbox | ✅ |
+| Approve / reject workflow | ✅ |
+| Pet adoption lifecycle | ✅ |
+| Soft removal | ✅ |
+| Docker configuration | ✅ |
+| GitHub Actions CI | ✅ |
 
-Jack & Paws
+**Next:** production deployment and infrastructure configuration.
 
-A pet adoption platform built around the idea that adoption should be a
-workflow, not just a button.
+---
+
+## 🗺️ Roadmap
+
+- Production deployment
+- Pet image upload/storage
+- Shelter profile pages
+- Email notifications
+- Application withdrawal
+- Admin moderation dashboard
+- Advanced shelter analytics
+- Automated integration tests
+- Production monitoring and logging
+- Automated deployment pipeline
+
+---
+
+## 👨‍💻 Author
+
+Built as a full-stack engineering project using React, Spring Boot, JPA, MySQL, JWT authentication, Docker, and GitHub Actions.
+
+### Jack & Paws
+
+**Adoption should be a workflow, not just a button.**
